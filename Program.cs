@@ -27,18 +27,63 @@ namespace Parser
             GameNames = gamesScraper.PagesDictionary.Keys.ToList();
             GameCategories = gamesScraper.SubcategoryDictionary.Keys.ToList();
 
+            List<Pattern> Patterns = new List<Pattern>();
             foreach (var pattern in patternsScraper.PagesDictionary)
             {
-                PatternScraper patternScraper = new PatternScraper(pattern.Value);
-                patternScraper.Start();
+                Pattern patternOutput;
+                if (!File.Exists(Pattern.GetFileName(pattern.Key))){
+                    PatternScraper patternScraper = new PatternScraper(pattern.Value);
+                    patternScraper.Start();
+                    patternOutput = patternScraper.patternObject;
+                }
+                else
+                {
+                    string text = File.ReadAllText(Pattern.GetFileName(pattern.Key));
+                    patternOutput = JsonConvert.DeserializeObject<Pattern>(text);
+                }
+                Patterns.Add(patternOutput);
             }
-            Console.ReadLine();
+
+            { //block for producing special JSON file
+                var nodes = Enumerable.Empty<object>().Select(x => new { id = "", group = 0 }).ToList();
+                foreach (Pattern patternObject in Patterns)
+                {
+
+                    nodes.Add(new
+                    {
+                        id = patternObject.Title,
+                        group = 1
+                    });
+                }
+
+                var links = Enumerable.Empty<object>().Select(x => new { source = "", target = "", value = 1 }).ToList();
+                foreach (Pattern patternObject in Patterns)
+                {
+                    foreach(Pattern.PatternLink link in patternObject.PatternsLinks)
+                    {
+                        if (link.Type == Pattern.PatternLink.LinkType.Pattern)
+                        {
+                            links.Add(new
+                            {
+                                source = link.From,
+                                target = link.To,
+                                value = 1
+                            });
+                        }
+                    }
+                }
+
+                File.WriteAllText("nodes.json", JsonConvert.SerializeObject(new {
+                    nodes,
+                    links
+                }));
+            }
         }
     }
 
     class PatternScraper : WebScraper
     {
-        Pattern patternObject = new Pattern();
+        public Pattern patternObject = new Pattern();
         String UrlToParse;
         public PatternScraper(String InputUrl)
         {
@@ -80,10 +125,8 @@ namespace Parser
             }
 
             string Json = JsonConvert.SerializeObject(patternObject);
-            string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
-            Regex r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
-            string Filename = r.Replace(patternObject.Title + ".json", "");
-            System.IO.File.WriteAllText("files/" + Filename, Json);
+            
+            File.WriteAllText( Pattern.GetFileName(patternObject.Title) , Json);
 
         }
     }
