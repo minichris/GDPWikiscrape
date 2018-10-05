@@ -20,11 +20,10 @@ namespace Parser
             patternsScraper.Start();
             PatternNames = patternsScraper.PagesDictionary.Keys.ToList();
 
-            //Get all the games names and URLs
-            CategoryScraper gamesScraper = new CategoryScraper("Games");
-            gamesScraper.Start();
-            GameNames = gamesScraper.PagesDictionary.Keys.ToList();
-            GameCategories = gamesScraper.SubcategoryDictionary.Keys.ToList();
+            var gamesWithCategories = GetGamesWithCategories();
+            GameNames = gamesWithCategories.Keys.ToList();
+            GameCategories = gamesWithCategories.Values.SelectMany(x => x).ToList();
+            File.WriteAllText("games.json", JsonConvert.SerializeObject(gamesWithCategories));
 
             List<Pattern> Patterns = new List<Pattern>();
             foreach (var pattern in patternsScraper.PagesDictionary)
@@ -47,33 +46,67 @@ namespace Parser
                 var nodes = Enumerable.Empty<object>().Select(x => new { id = "", group = 0 }).ToList();
                 foreach (Pattern patternObject in Patterns)
                 {
-
+                    
                     nodes.Add(new
                     {
                         id = patternObject.Title,
-                        group = 1
+                        group = new Random().Next(1,4)
                     });
                 }
 
                 var links = Enumerable.Empty<object>().Select(x => new { source = "", target = "", value = 1 }).ToList();
                 foreach (Pattern patternObject in Patterns)
                 {
-                    foreach(Pattern.PatternLink link in patternObject.PatternsLinks)
-                    {
-                        if (link.Type == Pattern.PatternLink.LinkType.Pattern)
+                    if (patternObject.PatternsLinks.Any(x => x.To == "Movement")) {
+                        foreach (Pattern.PatternLink link in patternObject.PatternsLinks)
                         {
-                            links.Add(new
+                            if (link.Type == Pattern.PatternLink.LinkType.Pattern)
                             {
-                                source = link.From,
-                                target = link.To,
-                                value = 1
-                            });
+                                links.Add(new
+                                {
+                                    source = link.From,
+                                    target = link.To,
+                                    value = new Random().Next(1, 4)
+                                });
+                            }
                         }
                     }
                 }
 
                 File.WriteAllText("nodes.json", JsonConvert.SerializeObject(new {nodes, links}));
             }
+        }
+
+        static Dictionary<String, List<String>> GetGamesWithCategories() //this fuction gets a kvp of Games with there Subcategory
+        {
+            //Scrape the games category
+            CategoryScraper gamesScraper = new CategoryScraper("Games");
+            gamesScraper.Start();
+
+            //Create a dictionary to hold games (key) with its subcategories (value)
+            Dictionary<String, List<String>> GamesWithCategories = new Dictionary<String, List<String>>();
+
+            //iterate though all the subcategories
+            foreach (string gameSubcategoryName in gamesScraper.SubcategoryDictionary.Keys.ToList())
+            {
+                CategoryScraper gamesSubcategoryScraper = new CategoryScraper(gameSubcategoryName);
+                gamesSubcategoryScraper.Start();
+
+                //iterate though all the games in that subcategory
+                foreach(string gameTitle in gamesSubcategoryScraper.PagesDictionary.Keys)
+                {
+                    if (GamesWithCategories.ContainsKey(gameTitle)) //if we already have the game in the dictionary
+                    {
+                        GamesWithCategories.First(x => x.Key == gameTitle).Value.Add(gameSubcategoryName);
+                    }
+                    else //if it doesn't exist in the dictionary already
+                    {
+                        GamesWithCategories.Add(gameTitle, new List<String>() { gameSubcategoryName });
+                    }
+                    
+                }
+            }
+            return GamesWithCategories;
         }
     }
 }
