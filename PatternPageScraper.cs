@@ -16,7 +16,7 @@ namespace Parser
         }
         public override void Init()
         {
-            this.LoggingLevel = WebScraper.LogLevel.All;
+            this.LoggingLevel = WebScraper.LogLevel.Critical;
             this.Request(UrlToParse, Parse);
         }
 
