@@ -4,32 +4,46 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace Parser
 {
     class Program
     {
-        public static List<String> PatternNames = new List<string>();
-        public static List<String> GameNames = new List<string>();
-        public static List<String> GameCategories = new List<string>();
+        public static List<String> PatternNames;
+        public static List<String> GameNames;
+        public static List<String> GameCategories;
 
         static void Main(string[] args)
         {
+            #region Load data
             //Get all the patterns names and URLs
-            CategoryScraper patternsScraper = new CategoryScraper("Patterns");
-            patternsScraper.Start();
+            CategoryScraper patternsScraper;
+            if (!File.Exists("PatternPages.json")) //if we havn't downloaded them before
+            {
+                patternsScraper = new CategoryScraper("Patterns");
+                patternsScraper.Start();
+                File.WriteAllText("PatternPages.json", JsonConvert.SerializeObject(patternsScraper));
+            }
+            else //if we have already downloaded them
+            {
+                string text = File.ReadAllText("PatternPages.json");
+                patternsScraper = JsonConvert.DeserializeObject<CategoryScraper>(text);
+            }
             PatternNames = patternsScraper.PagesDictionary.Keys.ToList();
 
             var gamesWithCategories = GetGamesWithCategories();
             GameNames = gamesWithCategories.Keys.ToList();
             GameCategories = gamesWithCategories.Values.SelectMany(x => x).ToList();
-            
+
 
             List<Pattern> Patterns = new List<Pattern>();
             foreach (var pattern in patternsScraper.PagesDictionary)
             {
                 Pattern patternOutput;
-                if (!File.Exists(Pattern.GetFileName(pattern.Key))){ //if we don't have this pattern file yet
+                if (!File.Exists(Pattern.GetFileName(pattern.Key)))
+                { //if we don't have this pattern file yet
                     PatternPageScraper patternScraper = new PatternPageScraper(pattern.Value);
                     patternScraper.Start();
                     patternOutput = patternScraper.patternObject;
@@ -40,11 +54,17 @@ namespace Parser
                     patternOutput = JsonConvert.DeserializeObject<Pattern>(text);
                 }
                 Patterns.Add(patternOutput);
-            }
+            } 
+            #endregion
 
             { //block for producing special JSON file
+               
+                var FilteredGames = gamesWithCategories.Where(game => game.Value.Contains("Social Media Games"));
+                var FilteredPatterns = Patterns.Where(pattern => pattern.PatternsLinks.Any(link => FilteredGames.Any(game => game.Key == link.To)));
+                String[] FilteredPatternsNames = FilteredPatterns.Select(pattern => pattern.Title).ToArray();
+
                 var nodes = Enumerable.Empty<object>().Select(x => new { id = "", group = 0 }).ToList();
-                foreach (Pattern patternObject in Patterns)
+                foreach (Pattern patternObject in FilteredPatterns)
                 {
                     
                     nodes.Add(new
@@ -53,24 +73,33 @@ namespace Parser
                         group = new Random().Next(1,4)
                     });
                 }
+                Console.WriteLine("Added "+ nodes.Count + " nodes");
 
                 var links = Enumerable.Empty<object>().Select(x => new { source = "", target = "", value = 1 }).ToList();
-                foreach (Pattern patternObject in Patterns)
+
+
+                ConcurrentBag<Pattern.PatternLink> PatternLinks = new ConcurrentBag<Pattern.PatternLink>();
+                Parallel.ForEach(FilteredPatterns, (patternObject) =>
                 {
-                    if (patternObject.PatternsLinks.Any(x => x.To == "Movement")) {
-                        foreach (Pattern.PatternLink link in patternObject.PatternsLinks)
-                        {
-                            if (link.Type == Pattern.PatternLink.LinkType.Pattern) //enforces that we only link to other patterns
-                            {
-                                links.Add(new
-                                {
-                                    source = link.From,
-                                    target = link.To,
-                                    value = new Random().Next(1, 4)
-                                });
-                            }
-                        }
-                    }
+                    Console.WriteLine("Pattern: " + patternObject.Title + " contains " + patternObject.PatternsLinks.Count() + " total links, filtering now.");
+
+                    var FilteredLinks = (from link in patternObject.PatternsLinks.AsParallel()
+                        where FilteredPatternsNames.Contains(link.To) //enforces that we only link to other patterns
+                        select link);
+                    Console.WriteLine("Pattern: " + patternObject.Title + " contains " + FilteredLinks.Count() + " links after filtering, " + (patternObject.PatternsLinks.Count() - FilteredLinks.Count()) + " removed.");
+                    FilteredLinks.ForAll(x => PatternLinks.Add(x));
+                });
+                Console.WriteLine("All PattenLinks found.");
+
+
+                foreach (Pattern.PatternLink link in PatternLinks)
+                {
+                    links.Add(new
+                    {
+                        source = link.From,
+                        target = link.To,
+                        value = new Random().Next(1, 4)
+                    });
                 }
 
                 File.WriteAllText("nodes.json", JsonConvert.SerializeObject(new {nodes, links}));
