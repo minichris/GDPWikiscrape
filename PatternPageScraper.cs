@@ -33,19 +33,6 @@ namespace Parser
                 linkObject.To = link.InnerText;
                 linkObject.RelatingParagraph = link.ParentNode.InnerTextClean;
 
-                if (Program.PatternNames.Contains(linkObject.To)) //is the page we are linking to a pattern?
-                {
-                    linkObject.Type = Pattern.PatternLink.LinkType.Pattern;
-                }
-                else if (Program.GameNames.Contains(linkObject.To)) //is the page we are linking to a game?
-                {
-                    linkObject.Type = Pattern.PatternLink.LinkType.Game;
-                }
-                else if (Program.GameCategories.Contains(linkObject.To)) //is the page we are linking to a game?
-                {
-                    linkObject.Type = Pattern.PatternLink.LinkType.GameCategory;
-                }
-
                 patternObject.PatternsLinks.Add(linkObject);
             }
 

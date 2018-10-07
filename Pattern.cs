@@ -18,16 +18,34 @@ namespace Parser
         {
             string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
             Regex r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
-            return "files/" + r.Replace(Title + ".json", "");
+            return "patterns/" + r.Replace(Title + ".json", "");
         }
 
         public class PatternLink
         {
             [JsonConverter(typeof(StringEnumConverter))]
             public enum LinkType { Pattern, Game, GameCategory, Unknown };
-            public LinkType Type = LinkType.Unknown;
             public String From, To;
             public String RelatingParagraph;
+            public LinkType getLinkType()
+            {
+                if (Program.PatternNames.Contains(this.To)) //is the page we are linking to a pattern?
+                {
+                    return Pattern.PatternLink.LinkType.Pattern;
+                }
+                else if (Program.GameNames.Contains(this.To)) //is the page we are linking to a game?
+                {
+                    return Pattern.PatternLink.LinkType.Game;
+                }
+                else if (Program.GameCategories.Contains(this.To)) //is the page we are linking to a game?
+                {
+                    return Pattern.PatternLink.LinkType.GameCategory;
+                }
+                else
+                {
+                    return Pattern.PatternLink.LinkType.Unknown;
+                }
+            }
         }
 
         internal static string GetFileName(object filename)
