@@ -58,9 +58,10 @@ namespace Parser
             #endregion
 
             { //block for producing special JSON file
-               
-                var FilteredGames = gamesWithCategories.Where(game => game.Value.Contains("Social Media Games"));
-                var FilteredPatterns = Patterns.Where(pattern => pattern.PatternsLinks.Any(link => FilteredGames.Any(game => game.Key == link.To)));
+
+                //var FilteredGames = gamesWithCategories.Where(game => game.Value.Contains("Social Media Games"));
+                //var FilteredPatterns = Patterns.Where(pattern => pattern.PatternsLinks.Any(link => FilteredGames.Any(game => game.Key == link.To)));
+                var FilteredPatterns = Patterns;
                 String[] FilteredPatternsNames = FilteredPatterns.Select(pattern => pattern.Title).ToArray();
 
                 var nodes = Enumerable.Empty<object>().Select(x => new { id = "", group = 0 }).ToList();
@@ -70,7 +71,7 @@ namespace Parser
                     nodes.Add(new
                     {
                         id = patternObject.Title,
-                        group = new Random().Next(1,4)
+                        group = 1
                     });
                 }
                 Console.WriteLine("Added "+ nodes.Count + " nodes");
@@ -98,7 +99,7 @@ namespace Parser
                     {
                         source = link.From,
                         target = link.To,
-                        value = new Random().Next(1, 4)
+                        value = 1
                     });
                 }
 
