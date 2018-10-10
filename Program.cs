@@ -59,19 +59,27 @@ namespace Parser
 
             { //block for producing special JSON file
 
-                //var FilteredGames = gamesWithCategories.Where(game => game.Value.Contains("Social Media Games"));
-                //var FilteredPatterns = Patterns.Where(pattern => pattern.PatternsLinks.Any(link => FilteredGames.Any(game => game.Key == link.To)));
-                var FilteredPatterns = Patterns;
+                var FilteredGames = gamesWithCategories.Where(game => game.Value.Contains("Social Media Games"));
+                var FilteredPatterns = Patterns.Where(pattern => pattern.PatternsLinks.Any(link => FilteredGames.Any(game => game.Key == link.To)));
+                //var FilteredPatterns = Patterns;
                 String[] FilteredPatternsNames = FilteredPatterns.Select(pattern => pattern.Title).ToArray();
+
+                List<String> categories = new List<String>();
+                foreach (var pattern in Patterns)
+                {
+                    categories.AddRange(pattern.Categories);
+                }
+                var categoryGroups = categories.GroupBy(x => x);
 
                 var nodes = Enumerable.Empty<object>().Select(x => new { id = "", group = 0 }).ToList();
                 foreach (Pattern patternObject in FilteredPatterns)
                 {
-                    
+                    var filteredCategories = categoryGroups.Where(x => patternObject.Categories.Contains(x.Key));
+                    int LeastCommonCategoryIndex = categories.LastIndexOf(filteredCategories.OrderBy(x => x.Count()).First().Key);
                     nodes.Add(new
                     {
                         id = patternObject.Title,
-                        group = 1
+                        group = LeastCommonCategoryIndex
                     });
                 }
                 Console.WriteLine("Added "+ nodes.Count + " nodes");

@@ -38,6 +38,16 @@ namespace Parser
                 patternObject.PatternsLinks.Add(linkObject);
             }
 
+            //get all the links in the bottom category box (guaranteed to be this pages categories)
+            foreach (var link in response.Css("#catlinks").First().Css("a[href]"))
+            {
+                if (link.Attributes["href"].Contains("redlink=1")) continue; //skip if this is a redlink (page doesn't exist).
+                if (link.InnerText.Contains("Patterns")) //check if its a pattern category
+                {
+                    patternObject.Categories.Add(link.InnerText);
+                }
+            }
+
             string Json = JsonConvert.SerializeObject(patternObject);
             
             File.WriteAllText( Pattern.GetFileName(patternObject.Title) , Json);

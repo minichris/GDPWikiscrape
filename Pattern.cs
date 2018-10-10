@@ -13,6 +13,7 @@ namespace Parser
         public String Title;
         public Dictionary<String, String> Relations = new Dictionary<string, string>();
         public List<PatternLink> PatternsLinks = new List<PatternLink>();
+        public List<String> Categories = new List<String>();
 
         public static String GetFileName(string Title)
         {
@@ -24,10 +25,10 @@ namespace Parser
         public class PatternLink
         {
             [JsonConverter(typeof(StringEnumConverter))]
-            public enum LinkType { Pattern, Game, GameCategory, Unknown };
+            public enum LinkType { Pattern, Game, GameCategory, PatternCategory, Unknown };
             public String From, To;
             public String RelatingParagraph;
-            public LinkType getLinkType()
+            public virtual LinkType getLinkType()
             {
                 if (Program.PatternNames.Contains(this.To)) //is the page we are linking to a pattern?
                 {
@@ -46,11 +47,6 @@ namespace Parser
                     return Pattern.PatternLink.LinkType.Unknown;
                 }
             }
-        }
-
-        internal static string GetFileName(object filename)
-        {
-            throw new NotImplementedException();
         }
     }
 }
