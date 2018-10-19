@@ -19,17 +19,21 @@ namespace Parser
         {
             #region Load data
             //Get all the patterns names and URLs
-            CategoryScraper patternsScraper;
-            if (!File.Exists("PatternPages.json")) //if we havn't downloaded them before
+            CategoryScraper patternsScraper = null;
+            if (File.Exists("PatternPages.json")) //if we have downloaded them before
+            {
+                Console.WriteLine("To read in existing pattern page values, press y");
+                if (Console.ReadKey().KeyChar == 'y')
+                {
+                    string text = File.ReadAllText("PatternPages.json");
+                    patternsScraper = JsonConvert.DeserializeObject<CategoryScraper>(text);
+                }
+            }
+            if(patternsScraper == null) //if we couldn't read them for any reason
             {
                 patternsScraper = new CategoryScraper("Patterns");
                 patternsScraper.Start();
-                File.WriteAllText("PatternPages.json", JsonConvert.SerializeObject(patternsScraper));
-            }
-            else //if we have already downloaded them
-            {
-                string text = File.ReadAllText("PatternPages.json");
-                patternsScraper = JsonConvert.DeserializeObject<CategoryScraper>(text);
+                File.WriteAllText("PatternPages.json", JsonConvert.SerializeObject(patternsScraper));  
             }
             PatternNames = patternsScraper.PagesDictionary.Keys.ToList();
 
@@ -37,6 +41,13 @@ namespace Parser
             GameNames = gamesWithCategories.Keys.ToList();
             GameCategories = gamesWithCategories.Values.SelectMany(x => x).ToList();
 
+            Console.WriteLine("Some patterns may have been downloaded already. keep these patterns? y/n");
+            if(Console.ReadKey().KeyChar != 'y')
+            {
+                new DirectoryInfo("patterns").Delete(true);
+            }
+
+            new DirectoryInfo("patterns").Create();
 
             List<Pattern> Patterns = new List<Pattern>();
             foreach (var pattern in patternsScraper.PagesDictionary)
@@ -54,14 +65,37 @@ namespace Parser
                     patternOutput = JsonConvert.DeserializeObject<Pattern>(text);
                 }
                 Patterns.Add(patternOutput);
-            } 
+            }
             #endregion
 
+            {
+                Console.WriteLine("To generate a new 'AllPatterns.json' and 'AllGames.json' for use with the website, press y");
+                if (Console.ReadKey().KeyChar == 'y')
+                {
+                    File.WriteAllText("AllPatterns.json", JsonConvert.SerializeObject(Patterns));
+
+                    //Make the JSON more useable by changing its layout
+                    List<dynamic> reconfigeredList = new List<dynamic>();
+                    foreach(var gameWithCategories in gamesWithCategories)
+                    {
+                        var data = new
+                        {
+                            name = gameWithCategories.Key,
+                            categories = gameWithCategories.Value
+                        };
+                        reconfigeredList.Add(data);
+                    }
+                    File.WriteAllText("AllGames.json", JsonConvert.SerializeObject(reconfigeredList));
+                }
+            }
+
+            Console.WriteLine("To generate a new 'nodes.json' file for use with the website, press y");
+            if (Console.ReadKey().KeyChar == 'y')
             { //block for producing special JSON file
 
-                var FilteredGames = gamesWithCategories.Where(game => game.Value.Contains("Social Media Games"));
-                var FilteredPatterns = Patterns.Where(pattern => pattern.PatternsLinks.Any(link => FilteredGames.Any(game => game.Key == link.To)));
-                //var FilteredPatterns = Patterns;
+                //var FilteredGames = gamesWithCategories.Where(game => game.Value.Contains("Social Media Games"));
+                //var FilteredPatterns = Patterns.Where(pattern => pattern.PatternsLinks.Any(link => FilteredGames.Any(game => game.Key == link.To)));
+                var FilteredPatterns = Patterns;
                 String[] FilteredPatternsNames = FilteredPatterns.Select(pattern => pattern.Title).ToArray();
 
                 List<String> categories = new List<String>();

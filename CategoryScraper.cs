@@ -17,7 +17,7 @@ namespace Parser
 
         public override void Init()
         {
-            this.LoggingLevel = WebScraper.LogLevel.Critical;
+            this.LoggingLevel = WebScraper.LogLevel.All;
             this.Request(URL, Parse);
         }
 
@@ -37,10 +37,17 @@ namespace Parser
             }
 
             //get the link to the next page of pages and follow it
-            var NextPageLink = response.Css("a").Where(x => x.InnerText == "next page").FirstOrDefault();
+            HtmlNode NextPageLink = response.Css("a[href]").Where(x => x.InnerText == "next page").FirstOrDefault();
             if(NextPageLink != null)
             {
-                this.Request(NextPageLink.Attributes["href"], Parse);
+                //the following section removes the hash and everything after, 
+                //because it confuses the scraper library for some reason
+                string input = NextPageLink.Attributes["href"];
+                int index = input.IndexOf("#");
+                if (index > 0)
+                    input = input.Substring(0, index);
+
+                this.Request(input, Parse);
             }
             else //we are done
             {
