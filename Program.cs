@@ -88,65 +88,6 @@ namespace Parser
                     File.WriteAllText("AllGames.json", JsonConvert.SerializeObject(reconfigeredList));
                 }
             }
-
-            Console.WriteLine("To generate a new 'nodes.json' file for use with the website, press y");
-            if (Console.ReadKey().KeyChar == 'y')
-            { //block for producing special JSON file
-
-                //var FilteredGames = gamesWithCategories.Where(game => game.Value.Contains("Social Media Games"));
-                //var FilteredPatterns = Patterns.Where(pattern => pattern.PatternsLinks.Any(link => FilteredGames.Any(game => game.Key == link.To)));
-                var FilteredPatterns = Patterns;
-                String[] FilteredPatternsNames = FilteredPatterns.Select(pattern => pattern.Title).ToArray();
-
-                List<String> categories = new List<String>();
-                foreach (var pattern in Patterns)
-                {
-                    categories.AddRange(pattern.Categories);
-                }
-                var categoryGroups = categories.GroupBy(x => x);
-
-                var nodes = Enumerable.Empty<object>().Select(x => new { id = "", group = 0 }).ToList();
-                foreach (Pattern patternObject in FilteredPatterns)
-                {
-                    var filteredCategories = categoryGroups.Where(x => patternObject.Categories.Contains(x.Key));
-                    int LeastCommonCategoryIndex = categories.LastIndexOf(filteredCategories.OrderBy(x => x.Count()).First().Key);
-                    nodes.Add(new
-                    {
-                        id = patternObject.Title,
-                        group = LeastCommonCategoryIndex
-                    });
-                }
-                Console.WriteLine("Added "+ nodes.Count + " nodes");
-
-                var links = Enumerable.Empty<object>().Select(x => new { source = "", target = "", value = 1 }).ToList();
-
-
-                ConcurrentBag<Pattern.PatternLink> PatternLinks = new ConcurrentBag<Pattern.PatternLink>();
-                Parallel.ForEach(FilteredPatterns, (patternObject) =>
-                {
-                    Console.WriteLine("Pattern: " + patternObject.Title + " contains " + patternObject.PatternsLinks.Count() + " total links, filtering now.");
-
-                    var FilteredLinks = (from link in patternObject.PatternsLinks.AsParallel()
-                        where FilteredPatternsNames.Contains(link.To) //enforces that we only link to other patterns
-                        select link);
-                    Console.WriteLine("Pattern: " + patternObject.Title + " contains " + FilteredLinks.Count() + " links after filtering, " + (patternObject.PatternsLinks.Count() - FilteredLinks.Count()) + " removed.");
-                    FilteredLinks.ForAll(x => PatternLinks.Add(x));
-                });
-                Console.WriteLine("All PattenLinks found.");
-
-
-                foreach (Pattern.PatternLink link in PatternLinks)
-                {
-                    links.Add(new
-                    {
-                        source = link.From,
-                        target = link.To,
-                        value = 1
-                    });
-                }
-
-                File.WriteAllText("nodes.json", JsonConvert.SerializeObject(new {nodes, links}));
-            }
         }
 
         static Dictionary<String, List<String>> GetGamesWithCategories() //this fuction gets a kvp of Games with there Subcategory

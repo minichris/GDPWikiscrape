@@ -29,9 +29,8 @@ namespace Parser
             foreach(var link in response.Css("#bodyContent").First().Css("a[href]"))
             {
                 if (link.Attributes["href"].Contains("redlink=1")) continue; //skip if this is a redlink (page doesn't exist).
-
+                if (link.Attributes["href"].Split('#').First() == response.FinalUrl) continue; //skip if this links to this page
                 Pattern.PatternLink linkObject = new Pattern.PatternLink();
-                linkObject.From = patternObject.Title;
                 linkObject.To = link.InnerText;
                 linkObject.RelatingParagraph = link.ParentNode.InnerTextClean;
 
