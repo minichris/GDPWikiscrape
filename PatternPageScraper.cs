@@ -3,6 +3,7 @@ using IronWebScraper;
 using System.Linq;
 using Newtonsoft.Json;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Parser
 {
@@ -24,7 +25,8 @@ namespace Parser
         {
             //Get the page title
             patternObject.Title = response.Css("#firstHeading").First().InnerText;
-            patternObject.Content = response.Css("#content").First().InnerHtml;
+            var PageContent = response.Css("#content").First().InnerHtml; //get the inner page content
+            patternObject.Content = Regex.Replace(PageContent, @"\t|\n|\r", ""); //remove all the tabs and newlines and save
             //get all the links in the content
             foreach (var link in response.Css("#bodyContent").First().Css("a[href]"))
             {
