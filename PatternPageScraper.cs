@@ -24,15 +24,15 @@ namespace Parser
         {
             //Get the page title
             patternObject.Title = response.Css("#firstHeading").First().InnerText;
-
+            patternObject.Content = response.Css("#content").First().InnerHtml;
             //get all the links in the content
-            foreach(var link in response.Css("#bodyContent").First().Css("a[href]"))
+            foreach (var link in response.Css("#bodyContent").First().Css("a[href]"))
             {
                 if (link.Attributes["href"].Contains("redlink=1")) continue; //skip if this is a redlink (page doesn't exist).
                 if (link.Attributes["href"].Split('#').First() == response.FinalUrl) continue; //skip if this links to this page
                 Pattern.PatternLink linkObject = new Pattern.PatternLink();
                 linkObject.To = link.InnerText;
-                linkObject.RelatingParagraph = link.ParentNode.InnerTextClean;
+                //linkObject.RelatingParagraph = link.ParentNode.InnerTextClean;
 
                 patternObject.PatternsLinks.Add(linkObject);
             }

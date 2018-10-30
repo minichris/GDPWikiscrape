@@ -11,6 +11,7 @@ namespace Parser
     class Pattern
     {
         public String Title;
+        public String Content;
         public Dictionary<String, String> Relations = new Dictionary<string, string>();
         public List<PatternLink> PatternsLinks = new List<PatternLink>();
         public List<String> Categories = new List<String>();
@@ -27,7 +28,7 @@ namespace Parser
             [JsonConverter(typeof(StringEnumConverter))]
             public enum LinkType { Pattern, Game, GameCategory, PatternCategory, Unknown };
             public String To;
-            public String RelatingParagraph;
+            //public String RelatingParagraph;
             public virtual LinkType getLinkType()
             {
                 if (Program.PatternNames.Contains(this.To)) //is the page we are linking to a pattern?
