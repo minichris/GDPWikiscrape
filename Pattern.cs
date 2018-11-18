@@ -28,6 +28,10 @@ namespace Parser
             [JsonConverter(typeof(StringEnumConverter))]
             public enum LinkType { Pattern, Game, GameCategory, PatternCategory, Unknown };
             public String To;
+            public PatternLink(String ToString)
+            {
+                this.To = ToString;
+            }
             //public String RelatingParagraph;
             public virtual LinkType getLinkType()
             {

@@ -4,7 +4,6 @@ using System.Linq;
 using Newtonsoft.Json;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using HtmlAgilityPack;
 
 namespace Parser
@@ -23,43 +22,43 @@ namespace Parser
             this.Request(UrlToParse, Parse);
         }
 
-        public static string ProcessPageContent(IronWebScraper.HtmlNode ContentNode)
+        public static string ProcessPageContentToString(HtmlAgilityPack.HtmlNode ContentNode)
         {
-            //Load the node into HtmlAgilityPack document
-            HtmlDocument ContentObject = new HtmlDocument();
-            ContentObject.LoadHtml(ContentNode.OuterHtml);
             //remove the "toc" section to save space and later client-side processing time
-            ContentObject.DocumentNode.SelectSingleNode("//*[@id=\"toc\"]").Remove();
+            ContentNode.SelectSingleNode("//*[@id=\"toc\"]").Remove();
             //remove all the tabs and newlines
-            String output = Regex.Replace(ContentObject.DocumentNode.InnerHtml, @"\t|\n|\r", "");
+            String output = Regex.Replace(ContentNode.InnerHtml, @"\t|\n|\r", "");
             return output;
         }
 
         public override void Parse(Response response)
         {
-            //Get the page title
-            patternObject.Title = response.Css("#firstHeading").First().InnerText;
-            IronWebScraper.HtmlNode PageContentNode = response.Css("#content").First(); //get the inner page content
-            patternObject.Content = ProcessPageContent(PageContentNode); //save the page HTML
+            //Create a new HTMLAglityPack document
+            HtmlDocument ContentDocument = new HtmlDocument();
+            //load the #content of the page into the document
+            ContentDocument.LoadHtml(response.Css("#content").First().OuterHtml);
+            HtmlAgilityPack.HtmlNode ContentNode = ContentDocument.DocumentNode;
+
+            //set the patternObject's title
+            patternObject.Title = ContentNode.SelectSingleNode("//*[@id=\"firstHeading\"]").InnerHtml;
+            //get a cleaned copy of the #content HTML for giving in the JSON data
+            patternObject.Content = ProcessPageContentToString(ContentNode);
             
-            //get all the links in the content
-            foreach (var link in response.Css("#bodyContent").First().Css("a[href]"))
-            {
-                if (link.Attributes["href"].Contains("redlink=1")) continue; //skip if this is a redlink (page doesn't exist).
-                if (link.Attributes["href"].Split('#').First() == response.FinalUrl) continue; //skip if this links to this page
-                Pattern.PatternLink linkObject = new Pattern.PatternLink();
-                linkObject.To = link.InnerText;
-                //linkObject.RelatingParagraph = link.ParentNode.InnerTextClean;
 
-                patternObject.PatternsLinks.Add(linkObject);
-            }
-
-            //get all the links in the bottom category box (guaranteed to be this pages categories)
-            foreach (var link in response.Css("#catlinks").First().Css("a[href]"))
+            foreach (var link in ContentNode.SelectNodes("//a/@href"))
             {
-                if (link.Attributes["href"].Contains("redlink=1")) continue; //skip if this is a redlink (page doesn't exist).
-                if (link.InnerText.Contains("Patterns")) //check if its a pattern category
+                //skip if this is a redlink (page doesn't exist).
+                if (link.Attributes["href"].Value.Contains("redlink=1")) continue;
+                //skip if this links to this page
+                if (link.Attributes["href"].Value.Split('#').First() == response.FinalUrl) continue;
+
+                //generate a new patternlink with the inner text of this link, then add it to this pattern objects list of links
+                patternObject.PatternsLinks.Add( new Pattern.PatternLink(link.InnerText) );
+
+                //if any of the links ancestor nodes is the "category links" part of the page
+                if(link.Ancestors().Any(node => node.Id == "catlinks"))
                 {
+                    //add it to the patterns list of categories
                     patternObject.Categories.Add(link.InnerText);
                 }
             }
