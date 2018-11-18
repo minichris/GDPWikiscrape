@@ -12,7 +12,7 @@ namespace Parser
     {
         public String Title;
         public String Content;
-        public Dictionary<String, String> Relations = new Dictionary<string, string>();
+        public Dictionary<String, List<String>> Relations = new Dictionary<String, List<String>>();
         public List<PatternLink> PatternsLinks = new List<PatternLink>();
         public List<String> Categories = new List<String>();
 

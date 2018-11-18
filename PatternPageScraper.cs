@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
+using System.Collections.Generic;
 
 namespace Parser
 {
@@ -29,6 +30,18 @@ namespace Parser
             //remove all the tabs and newlines
             String output = Regex.Replace(ContentNode.InnerHtml, @"\t|\n|\r", "");
             return output;
+        }
+
+        private static HtmlAgilityPack.HtmlNode GetNodeReleventPageHeading(HtmlAgilityPack.HtmlNode Node, String NodeName)
+        {
+            //get to the paragraph level and get its previous sibling
+            var headingNode = Node.ParentNode;
+            //iterate through the previous nodes until we get
+            while (headingNode != null && headingNode.Name != NodeName)
+            {
+                headingNode = headingNode.PreviousSibling;
+            }
+            return headingNode;
         }
 
         public override void Parse(Response response)
@@ -60,6 +73,32 @@ namespace Parser
                 {
                     //add it to the patterns list of categories
                     patternObject.Categories.Add(link.InnerText);
+                }
+
+                //get relation links
+                if (GetNodeReleventPageHeading(link, "h2") != null 
+                    && GetNodeReleventPageHeading(link, "h2").InnerText == "Relations")
+                {
+                    //get the relation type of this relation and get its inner text
+                    HtmlAgilityPack.HtmlNode RelationHeadingNode = GetNodeReleventPageHeading(link, "h3");
+                    String RelationName = RelationHeadingNode.InnerText;
+                    
+                    //if there is a h4 node before the previous h3 node
+                    if(GetNodeReleventPageHeading(link, "h4") != null 
+                        && RelationHeadingNode.InnerStartIndex < GetNodeReleventPageHeading(link, "h4").InnerStartIndex)
+                    {
+                        //assume it is a "with x" sub-category of relation for the "Can Instantiate" section
+                        RelationName = RelationHeadingNode.InnerText + " " + GetNodeReleventPageHeading(link, "h4").InnerText;
+                    }
+
+                    //if the pattern object doesn't contain this relation type already
+                    if (!patternObject.Relations.Any(relation => relation.Key == RelationName))
+                    {
+                        //add a list for a relation of this type
+                        patternObject.Relations.Add(RelationName, new List<String>());
+                    }
+                    //add the links inner text to the relevent relation's list
+                    patternObject.Relations[RelationName].Add(link.InnerText);
                 }
             }
 
