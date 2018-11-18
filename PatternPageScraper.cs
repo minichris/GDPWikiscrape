@@ -65,17 +65,19 @@ namespace Parser
                 //skip if this links to this page
                 if (link.Attributes["href"].Value.Split('#').First() == response.FinalUrl) continue;
 
-                //generate a new patternlink with the inner text of this link, then add it to this pattern objects list of links
-                patternObject.PatternsLinks.Add( new Pattern.PatternLink(link.InnerText) );
-
                 //if any of the links ancestor nodes is the "category links" part of the page
                 if(link.Ancestors().Any(node => node.Id == "catlinks"))
                 {
                     //add it to the patterns list of categories
                     patternObject.Categories.Add(link.InnerText);
                 }
+                else //assume its a normal text-body link
+                {
+                    //check if we don't already know about this link
+                    patternObject.CreateOrGetPatternLink(link.InnerText);
+                }
 
-                //get relation links
+                //add relation info if this is a relation link
                 if (GetNodeReleventPageHeading(link, "h2") != null 
                     && GetNodeReleventPageHeading(link, "h2").InnerText == "Relations")
                 {
@@ -91,14 +93,8 @@ namespace Parser
                         RelationName = RelationHeadingNode.InnerText + " " + GetNodeReleventPageHeading(link, "h4").InnerText;
                     }
 
-                    //if the pattern object doesn't contain this relation type already
-                    if (!patternObject.Relations.Any(relation => relation.Key == RelationName))
-                    {
-                        //add a list for a relation of this type
-                        patternObject.Relations.Add(RelationName, new List<String>());
-                    }
-                    //add the links inner text to the relevent relation's list
-                    patternObject.Relations[RelationName].Add(link.InnerText);
+                    //add the relevent relation to this link
+                    patternObject.CreateOrGetPatternLink(link.InnerText).AssociatedRelations.Add(RelationName);
                 }
             }
 

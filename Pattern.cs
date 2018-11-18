@@ -12,9 +12,20 @@ namespace Parser
     {
         public String Title;
         public String Content;
-        public Dictionary<String, List<String>> Relations = new Dictionary<String, List<String>>();
-        public List<PatternLink> PatternsLinks = new List<PatternLink>();
+        [JsonProperty]
+        private List<PatternLink> PatternsLinks = new List<PatternLink>();
         public List<String> Categories = new List<String>();
+
+        public PatternLink CreateOrGetPatternLink(String Destination)
+        {
+            //check if the link already exists
+            if (this.PatternsLinks.Find(pLink => pLink.To == Destination) == null)
+            {
+                //generate a new patternlink with the inner text of this link, then add it to this pattern objects list of links
+                this.PatternsLinks.Add(new Pattern.PatternLink(Destination));
+            }
+            return this.PatternsLinks.Find(pLink => pLink.To == Destination); //return it
+        }
 
         public static String GetFileName(string Title)
         {
@@ -25,14 +36,16 @@ namespace Parser
 
         public class PatternLink
         {
-            [JsonConverter(typeof(StringEnumConverter))]
-            public enum LinkType { Pattern, Game, GameCategory, PatternCategory, Unknown };
+            public List<String> AssociatedRelations = new List<String>();
             public String To;
             public PatternLink(String ToString)
             {
                 this.To = ToString;
             }
-            //public String RelatingParagraph;
+
+            //Enum Stuff
+            [JsonConverter(typeof(StringEnumConverter))]
+            public enum LinkType { Pattern, Game, GameCategory, PatternCategory, Unknown };
             public virtual LinkType getLinkType()
             {
                 if (Program.PatternNames.Contains(this.To)) //is the page we are linking to a pattern?
