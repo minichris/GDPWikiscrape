@@ -25,8 +25,6 @@ namespace Parser
 
         public static string ProcessPageContentToString(HtmlAgilityPack.HtmlNode ContentNode)
         {
-            //remove the "toc" section to save space and later client-side processing time
-            ContentNode.SelectSingleNode("//*[@id=\"toc\"]").Remove();
             //remove all the tabs and newlines
             String output = Regex.Replace(ContentNode.InnerHtml, @"\t|\n|\r", "");
             return output;
@@ -51,6 +49,15 @@ namespace Parser
             //load the #content of the page into the document
             ContentDocument.LoadHtml(response.Css("#content").First().OuterHtml);
             HtmlAgilityPack.HtmlNode ContentNode = ContentDocument.DocumentNode;
+
+            //remove the "toc" and "jump" sections to save space and later client-side processing time
+            if (ContentNode.SelectSingleNode("//*[@id=\"toc\"]") != null)
+            {
+                ContentNode.SelectSingleNode("//*[@id=\"toc\"]").Remove();
+            }
+            if (ContentNode.SelectSingleNode("//*[@id=\"jump-to-nav\"]") != null) {
+                ContentNode.SelectSingleNode("//*[@id=\"jump-to-nav\"]").Remove();
+            }
 
             //set the patternObject's title
             patternObject.Title = ContentNode.SelectSingleNode("//*[@id=\"firstHeading\"]").InnerHtml;
