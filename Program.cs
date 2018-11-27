@@ -15,6 +15,26 @@ namespace Parser
         public static List<String> GameNames;
         public static List<String> GameCategories;
 
+        static bool CheckForYes()
+        {
+            try
+            {
+                if(Console.ReadKey().KeyChar == 'y')
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch(System.InvalidOperationException) //this console can't input characters (run through VS?)
+            {
+                Console.WriteLine("In a console with no input, auto no.");
+                return false;
+            }
+        }
+
         static void Main(string[] args)
         {
             #region Load data
@@ -23,7 +43,7 @@ namespace Parser
             if (File.Exists("PatternPages.json")) //if we have downloaded them before
             {
                 Console.WriteLine("To read in existing pattern page values, press y");
-                if (Console.ReadKey().KeyChar == 'y')
+                if (CheckForYes())
                 {
                     string text = File.ReadAllText("PatternPages.json");
                     patternsScraper = JsonConvert.DeserializeObject<CategoryScraper>(text);
@@ -42,7 +62,7 @@ namespace Parser
             GameCategories = gamesWithCategories.Values.SelectMany(x => x).ToList();
 
             Console.WriteLine("Some patterns may have been downloaded already. keep these patterns? y/n");
-            if(Console.ReadKey().KeyChar != 'y')
+            if(!CheckForYes())
             {
                 new DirectoryInfo("patterns").Delete(true);
             }
@@ -68,25 +88,21 @@ namespace Parser
             }
             #endregion
 
-            {
-                Console.WriteLine("To generate a new 'AllPatterns.json' and 'AllGames.json' for use with the website, press y");
-                if (Console.ReadKey().KeyChar == 'y')
-                {
-                    File.WriteAllText("AllPatterns.json", JsonConvert.SerializeObject(Patterns));
+            { //file writing segment
+                File.WriteAllText("AllPatterns.json", JsonConvert.SerializeObject(Patterns));
 
-                    //Make the JSON more useable by changing its layout
-                    List<dynamic> reconfigeredList = new List<dynamic>();
-                    foreach(var gameWithCategories in gamesWithCategories)
+                //Make the JSON more useable by changing its layout
+                List<dynamic> reconfigeredList = new List<dynamic>();
+                foreach(var gameWithCategories in gamesWithCategories)
+                {
+                    var data = new
                     {
-                        var data = new
-                        {
-                            name = gameWithCategories.Key,
-                            categories = gameWithCategories.Value
-                        };
-                        reconfigeredList.Add(data);
-                    }
-                    File.WriteAllText("AllGames.json", JsonConvert.SerializeObject(reconfigeredList));
+                        name = gameWithCategories.Key,
+                        categories = gameWithCategories.Value
+                    };
+                    reconfigeredList.Add(data);
                 }
+                File.WriteAllText("AllGames.json", JsonConvert.SerializeObject(reconfigeredList));
             }
         }
 
