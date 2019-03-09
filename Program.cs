@@ -61,13 +61,20 @@ namespace Parser
             GameNames = gamesWithCategories.Keys.ToList();
             GameCategories = gamesWithCategories.Values.SelectMany(x => x).ToList();
 
-            Console.WriteLine("Some patterns may have been downloaded already. keep these patterns? y/n");
-            if(!CheckForYes())
+            if (Directory.Exists("patterns"))
             {
-                new DirectoryInfo("patterns").Delete(true);
+                Console.WriteLine("Some patterns may have been downloaded already. keep these patterns? y/n");
+                if (!CheckForYes())
+                {
+                    new DirectoryInfo("patterns").Delete(true);
+                    new DirectoryInfo("patterns").Create();
+                }
             }
-
-            new DirectoryInfo("patterns").Create();
+            else
+            {
+                new DirectoryInfo("patterns").Create();
+            }
+            
 
             List<Pattern> Patterns = new List<Pattern>();
             foreach (var pattern in patternsScraper.PagesDictionary)
