@@ -59,6 +59,11 @@ namespace Parser
                 ContentNode.SelectSingleNode("//*[@id=\"jump-to-nav\"]").Remove();
             }
 
+            foreach(var node in ContentNode.SelectNodes("//comment()"))
+            {
+                node.Remove();
+            }
+
             //set the patternObject's title
             patternObject.Title = ContentNode.SelectSingleNode("//*[@id=\"firstHeading\"]").InnerHtml;
             //get a cleaned copy of the #content HTML for giving in the JSON data
