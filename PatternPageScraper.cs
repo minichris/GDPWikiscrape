@@ -50,7 +50,7 @@ namespace Parser
             ContentDocument.LoadHtml(response.Css("#content").First().OuterHtml);
             HtmlAgilityPack.HtmlNode ContentNode = ContentDocument.DocumentNode;
 
-            //remove the "toc" and "jump" sections to save space and later client-side processing time
+            //remove the "toc" and "jump" and "siteSub" sections to save space and later client-side processing time
             if (ContentNode.SelectSingleNode("//*[@id=\"toc\"]") != null)
             {
                 ContentNode.SelectSingleNode("//*[@id=\"toc\"]").Remove();
@@ -58,6 +58,11 @@ namespace Parser
             if (ContentNode.SelectSingleNode("//*[@id=\"jump-to-nav\"]") != null) {
                 ContentNode.SelectSingleNode("//*[@id=\"jump-to-nav\"]").Remove();
             }
+            if (ContentNode.SelectSingleNode("//*[@id=\"siteSub\"]") != null)
+            {
+                ContentNode.SelectSingleNode("//*[@id=\"siteSub\"]").Remove();
+            }
+
 
             foreach(var node in ContentNode.SelectNodes("//comment()"))
             {
