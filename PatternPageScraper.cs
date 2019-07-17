@@ -23,10 +23,10 @@ namespace Parser
             this.Request(UrlToParse, Parse);
         }
 
-        public static string ProcessPageContentToString(HtmlAgilityPack.HtmlNode ContentNode)
+        public static string ProcessPageContentToString(string HTMLContent)
         {
             //remove all the tabs and newlines
-            String output = Regex.Replace(ContentNode.InnerHtml, @"\t|\n|\r", "");
+            String output = Regex.Replace(HTMLContent, @"\t|\n|\r", "");
             return output;
         }
 
@@ -48,21 +48,15 @@ namespace Parser
             HtmlDocument ContentDocument = new HtmlDocument();
             //load the #content of the page into the document
             ContentDocument.LoadHtml(response.Css("#content").First().OuterHtml);
-            HtmlAgilityPack.HtmlNode ContentNode = ContentDocument.DocumentNode;
+            HtmlAgilityPack.HtmlNode BodyNode = ContentDocument.DocumentNode;
+            patternObject.Title = BodyNode.SelectSingleNode("//*[@id=\"firstHeading\"]").InnerHtml;
+            HtmlAgilityPack.HtmlNode ContentNode = BodyNode.SelectSingleNode("//*[@id=\"mw-content-text\"]");
 
             //remove the "toc" and "jump" and "siteSub" sections to save space and later client-side processing time
             if (ContentNode.SelectSingleNode("//*[@id=\"toc\"]") != null)
             {
                 ContentNode.SelectSingleNode("//*[@id=\"toc\"]").Remove();
             }
-            if (ContentNode.SelectSingleNode("//*[@id=\"jump-to-nav\"]") != null) {
-                ContentNode.SelectSingleNode("//*[@id=\"jump-to-nav\"]").Remove();
-            }
-            if (ContentNode.SelectSingleNode("//*[@id=\"siteSub\"]") != null)
-            {
-                ContentNode.SelectSingleNode("//*[@id=\"siteSub\"]").Remove();
-            }
-
 
             foreach(var node in ContentNode.SelectNodes("//comment()"))
             {
@@ -72,7 +66,7 @@ namespace Parser
             //set the patternObject's title
             patternObject.Title = ContentNode.SelectSingleNode("//*[@id=\"firstHeading\"]").InnerHtml;
             //get a cleaned copy of the #content HTML for giving in the JSON data
-            patternObject.Content = ProcessPageContentToString(ContentNode);
+            patternObject.Content = ProcessPageContentToString(BodyNode.SelectSingleNode("//*[@id=\"firstHeading\"]").OuterHtml + ContentNode.InnerHtml);
             
 
             foreach (var link in ContentNode.SelectNodes("//a/@href"))
