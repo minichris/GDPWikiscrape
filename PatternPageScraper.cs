@@ -63,10 +63,12 @@ namespace Parser
                 node.Remove();
             }
 
+            ContentNode.PrependChild(BodyNode.SelectSingleNode("//*[@id=\"firstHeading\"]"));
+
             //set the patternObject's title
             patternObject.Title = ContentNode.SelectSingleNode("//*[@id=\"firstHeading\"]").InnerHtml;
             //get a cleaned copy of the #content HTML for giving in the JSON data
-            patternObject.Content = ProcessPageContentToString(BodyNode.SelectSingleNode("//*[@id=\"firstHeading\"]").OuterHtml + ContentNode.InnerHtml);
+            patternObject.Content = ProcessPageContentToString(ContentNode.OuterHtml);
             
 
             foreach (var link in ContentNode.SelectNodes("//a/@href"))
