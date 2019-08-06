@@ -23,10 +23,11 @@ namespace Parser
             this.Request(UrlToParse, Parse);
         }
 
-        public static string ProcessPageContentToString(string HTMLContent)
+        public static string ProcessPageContentToString(HtmlAgilityPack.HtmlNode HTMLContent)
         {
             //remove all the tabs and newlines
-            String output = Regex.Replace(HTMLContent, @"\t|\n|\r", "");
+            String output = Regex.Replace(HTMLContent.OuterHtml, @"\t|\n|\r", "");
+            
             return output;
         }
 
@@ -67,8 +68,6 @@ namespace Parser
 
             //set the patternObject's title
             patternObject.Title = ContentNode.SelectSingleNode("//*[@id=\"firstHeading\"]").InnerHtml;
-            //get a cleaned copy of the #content HTML for giving in the JSON data
-            patternObject.Content = ProcessPageContentToString(ContentNode.OuterHtml);
             
 
             foreach (var link in ContentNode.SelectNodes("//a/@href"))
@@ -81,8 +80,11 @@ namespace Parser
                 //if any of the links ancestor nodes is the "category links" part of the page
                 if(link.Ancestors().Any(node => node.Id == "catlinks"))
                 {
-                    //add it to the patterns list of categories
-                    patternObject.Categories.Add(link.InnerText);
+                    if (link.InnerText != "Categories") //if it is not the "categories" special page
+                    {
+                        //add it to the patterns list of categories
+                        patternObject.Categories.Add(link.InnerText);
+                    }
                 }
                 else //assume its a normal text-body link
                 {
@@ -107,9 +109,12 @@ namespace Parser
                     }
 
                     //add the relevent relation to this link
-                    patternObject.CreateOrGetPatternLink(link.InnerText).AssociatedRelations.Add(RelationName);
+                    patternObject.CreateOrGetPatternLink(link.InnerText).Type.Add(RelationName);
                 }
             }
+
+            //get a cleaned copy of the #content HTML for giving in the JSON data
+            patternObject.Content = ProcessPageContentToString(ContentNode);
 
             string Json = JsonConvert.SerializeObject(patternObject);
             

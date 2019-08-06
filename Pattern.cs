@@ -36,34 +36,11 @@ namespace Parser
 
         public class PatternLink
         {
-            public List<String> AssociatedRelations = new List<String>();
+            public List<String> Type = new List<String>();
             public String To;
             public PatternLink(String ToString)
             {
                 this.To = ToString;
-            }
-
-            //Enum Stuff
-            [JsonConverter(typeof(StringEnumConverter))]
-            public enum LinkType { Pattern, Game, GameCategory, PatternCategory, Unknown };
-            public virtual LinkType getLinkType()
-            {
-                if (Program.PatternNames.Contains(this.To)) //is the page we are linking to a pattern?
-                {
-                    return Pattern.PatternLink.LinkType.Pattern;
-                }
-                else if (Program.GameNames.Contains(this.To)) //is the page we are linking to a game?
-                {
-                    return Pattern.PatternLink.LinkType.Game;
-                }
-                else if (Program.GameCategories.Contains(this.To)) //is the page we are linking to a game?
-                {
-                    return Pattern.PatternLink.LinkType.GameCategory;
-                }
-                else
-                {
-                    return Pattern.PatternLink.LinkType.Unknown;
-                }
             }
         }
     }

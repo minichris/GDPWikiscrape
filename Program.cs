@@ -96,7 +96,9 @@ namespace Parser
             #endregion
 
             { //file writing segment
-                File.WriteAllText("AllPatterns.json", JsonConvert.SerializeObject(Patterns));
+                var PatternsJSON = JsonConvert.SerializeObject(Patterns);
+                PatternsJSON = PatternsJSON.Replace("\"Type\":[],", ""); //remove empty Type
+                File.WriteAllText("AllPatterns.json", PatternsJSON);
 
                 //Make the JSON more useable by changing its layout
                 List<dynamic> reconfigeredList = new List<dynamic>();
