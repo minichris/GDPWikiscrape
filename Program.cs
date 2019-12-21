@@ -6,17 +6,29 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using CommandLine;
 
 namespace Parser
 {
+    public class Options
+    {
+        [Option('i', "interactive", Required = false, HelpText = "Interactive mode.")]
+        public bool Interactive { get; set; }
+    }
+
     class Program
     {
         public static List<String> PatternNames;
         public static List<String> GameNames;
         public static List<String> GameCategories;
+        public static bool InteractiveMode = true;
 
         static bool CheckForYes()
         {
+            if (!InteractiveMode)
+            {
+                return false;
+            }
             try
             {
                 if(Console.ReadKey().KeyChar == 'y')
@@ -37,6 +49,20 @@ namespace Parser
 
         static void Main(string[] args)
         {
+            CommandLine.Parser.Default.ParseArguments<Options>(args)
+                .WithParsed<Options>(o =>
+                {
+                    if (o.Interactive)
+                    {
+                        Console.WriteLine($"Interactive output enabled. Current Arguments: -i {o.Interactive}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Current Arguments: -i {o.Interactive}");
+                        InteractiveMode = false;
+                    }
+                });
+
             #region Load data
             //Get all the patterns names and URLs
             CategoryScraper patternsScraper = null;
